@@ -1,7 +1,11 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-/** First non-empty value (CI secrets, then .env). Supports OPENROUTE_KEY or VITE_OPENROUTE_KEY. */
+/**
+ * Client bundle reads import.meta.env.VITE_* (see src/utils/api.js).
+ * CI / GitHub secrets: OPENROUTE_KEY, TRAVELTIME_APP_ID, TRAVELTIME_API_KEY
+ * (same as early Vite config). Optional VITE_* in .env.local for local dev.
+ */
 function pickEnv(fileEnv, ...keys) {
   for (const key of keys) {
     const v = process.env[key] ?? fileEnv[key]
@@ -28,7 +32,6 @@ export default defineConfig(({ mode }) => {
     'VITE_TRAVELTIME_API_KEY',
   )
 
-  // GitHub Actions sets GITHUB_REPOSITORY=owner/repo — base must match repo name for Pages assets + fetch().
   const pagesBaseFromCi =
     process.env.GITHUB_ACTIONS === 'true' &&
     process.env.GITHUB_REPOSITORY?.includes('/')
