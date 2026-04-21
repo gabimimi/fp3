@@ -4,6 +4,16 @@
   height: 100vh;
   overflow: hidden;
   font-family: var(--font-sans);
+  animation: app-enter 0.55s ease-out;
+}
+
+@keyframes app-enter {
+  from {
+    opacity: 0.88;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .app-header h1,
@@ -14,7 +24,7 @@
   letter-spacing: -0.02em;
 }
 
-/* Serious masthead — neutral, no color field */
+/* Serious masthead: neutral, no color field */
 .app-header {
   background: var(--paper-card);
   color: var(--ink);
@@ -63,18 +73,18 @@
   padding: 20px 22px;
 }
 
-/* Toolbar — neutral chrome */
+/* Toolbar: neutral chrome */
 .toolbar {
   background: var(--paper-card);
   color: var(--ink);
   border-radius: 0;
-  border: 1px solid var(--paper-rule);
+  border: var(--ui-card-border);
   padding: 16px 20px;
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 1px 0 rgba(26, 26, 26, 0.04);
+  box-shadow: var(--ui-card-shadow);
 }
 
 .toolbar-row {
@@ -189,7 +199,7 @@
   }
 }
 
-/* Onboarding — restrained */
+/* Onboarding: restrained */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -356,8 +366,8 @@
   border-radius: 0;
   padding: 22px 22px 24px;
   margin-bottom: 20px;
-  border: 1px solid var(--paper-rule);
-  box-shadow: 0 1px 0 rgba(26, 26, 26, 0.04);
+  border: var(--ui-card-border);
+  box-shadow: var(--ui-card-shadow);
 }
 
 .chart-card h3 {
@@ -517,7 +527,7 @@
 
 /* -------------------------------------------------------------------------
    Plots: one blue for “you” / budget / rent bars & markers; soft = same hue
-   (D3 still emits #5B7FA5 / #a0d2db — we normalize here.)
+   (D3 still emits #5B7FA5 / #a0d2db; we normalize here.)
    ------------------------------------------------------------------------- */
 .charts-panel svg.chart-svg rect[fill='#5B7FA5' i] {
   fill: var(--chart-blue) !important;

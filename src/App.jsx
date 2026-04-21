@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import ScrollyStory from './components/ScrollyStory'
 import OnboardingModal from './components/OnboardingModal'
 import MapPanel from './components/MapPanel'
 import ChartsPanel from './components/ChartsPanel'
@@ -9,6 +10,7 @@ import { getOuterIsochrone, pointInPolygon, tractIntersectsIsochrone } from './u
 import './App.css'
 
 function App() {
+  const [storyComplete, setStoryComplete] = useState(false)
   const [onboarded, setOnboarded] = useState(false)
   const [monthlyIncome, setMonthlyIncome] = useState(0)
   const [workLocation, setWorkLocation] = useState(null)
@@ -115,6 +117,24 @@ function App() {
     setWorkAddress(address)
     setOnboarded(true)
   }, [])
+
+  useEffect(() => {
+    if (!storyComplete) return
+    const id = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    })
+    return () => cancelAnimationFrame(id)
+  }, [storyComplete])
+
+  if (!storyComplete) {
+    return (
+      <ScrollyStory
+        onComplete={() => {
+          setStoryComplete(true)
+        }}
+      />
+    )
+  }
 
   if (!onboarded) {
     return <OnboardingModal onSubmit={handleOnboard} />

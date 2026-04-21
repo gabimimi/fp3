@@ -271,15 +271,15 @@ export default function MapPanel({
               Based on your income relative to Boston Area Median Income (AMI: $140,200).
               Colors show whether a project has units designated for your income tier.
             </p>
-            <div className="legend-item" title="This project has units designated for your AMI tier or below — you are likely eligible.">
+            <div className="legend-item" title="This project has units designated for your AMI tier or below. You are likely eligible.">
               <div className="legend-dot" style={{ background: '#00843D' }} />
               <span>Affordable</span>
             </div>
-            <div className="legend-item" title="This project has units one AMI tier above yours — you may qualify depending on availability.">
+            <div className="legend-item" title="This project has units one AMI tier above yours. You may qualify depending on availability.">
               <div className="legend-dot" style={{ background: '#ED8B00' }} />
               <span>Moderate</span>
             </div>
-            <div className="legend-item" title="This project has no units at or near your AMI tier — unlikely to be affordable for your income.">
+            <div className="legend-item" title="This project has no units at or near your AMI tier, so it is unlikely to be affordable for your income.">
               <div className="legend-dot" style={{ background: '#DA291C' }} />
               <span>Above Budget</span>
             </div>
