@@ -14,6 +14,8 @@ export default function Toolbar({
   onClearHousingSelection,
 }) {
   const busy = isLoading || routeLoading
+  const showFooter =
+    busy || commuteTime !== null || clickedPoint || selectedHousing
 
   return (
     <div className="toolbar">
@@ -70,31 +72,33 @@ export default function Toolbar({
         </div>
       </div>
 
-      <div className="toolbar-row toolbar-row-status">
-        {busy && (
-          <div className="loading-block" role="status" aria-live="polite">
-            <span className="loading-dot" aria-hidden />
-            <span>Loading isochrone and commute…</span>
+      {showFooter && (
+        <div className="toolbar-row toolbar-row-footer">
+          <div className="toolbar-footer-left">
+            {busy && (
+              <div className="loading-block" role="status" aria-live="polite">
+                <span className="loading-dot" aria-hidden />
+                <span>Loading isochrone and commute…</span>
+              </div>
+            )}
+            {!busy && commuteTime !== null && (
+              <p className="commute-time">Est. commute: ~{commuteTime} min</p>
+            )}
           </div>
-        )}
-
-        {!busy && commuteTime !== null && (
-          <span className="commute-time">Est. commute: ~{commuteTime} min</span>
-        )}
-      </div>
-
-      <div className="toolbar-row toolbar-row-actions">
-        {clickedPoint && (
-          <button type="button" className="toolbar-text-btn" onClick={onClearExploration}>
-            Clear map exploration
-          </button>
-        )}
-        {selectedHousing && (
-          <button type="button" className="toolbar-text-btn" onClick={onClearHousingSelection}>
-            Clear selected project
-          </button>
-        )}
-      </div>
+          <div className="toolbar-footer-actions">
+            {clickedPoint && (
+              <button type="button" className="toolbar-link-btn" onClick={onClearExploration}>
+                Clear map exploration
+              </button>
+            )}
+            {selectedHousing && (
+              <button type="button" className="toolbar-link-btn" onClick={onClearHousingSelection}>
+                Clear selected project
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {selectedHousing && (
         <div className="toolbar-selected-housing">

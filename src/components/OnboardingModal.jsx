@@ -145,25 +145,18 @@ export default function OnboardingModal({ onSubmit, onBackToStory }) {
 
         <fieldset className="modal-fieldset">
           <legend className="modal-legend">Budget</legend>
-          <div className="modal-toggle-row">
-            <label className="modal-radio">
-              <input
-                type="radio"
-                name="budgetMode"
-                checked={budgetMode === 'income'}
-                onChange={() => setBudgetMode('income')}
-              />
-              Monthly gross income
-            </label>
-            <label className="modal-radio">
-              <input
-                type="radio"
-                name="budgetMode"
-                checked={budgetMode === 'rent'}
-                onChange={() => setBudgetMode('rent')}
-              />
-              Max monthly rent (housing budget)
-            </label>
+          <div className="form-group">
+            <label htmlFor="budgetMode">How should we set your budget?</label>
+            <select
+              id="budgetMode"
+              className="modal-select"
+              value={budgetMode}
+              onChange={(e) => setBudgetMode(e.target.value)}
+              aria-label="Budget input type"
+            >
+              <option value="income">Monthly gross income</option>
+              <option value="rent">Max monthly rent (housing budget)</option>
+            </select>
           </div>
           {budgetMode === 'income' ? (
             <div className="form-group">
@@ -200,25 +193,18 @@ export default function OnboardingModal({ onSubmit, onBackToStory }) {
 
         <fieldset className="modal-fieldset">
           <legend className="modal-legend">Workplace</legend>
-          <div className="modal-toggle-row">
-            <label className="modal-radio">
-              <input
-                type="radio"
-                name="locationMode"
-                checked={locationMode === 'search'}
-                onChange={() => setLocationMode('search')}
-              />
-              Search address
-            </label>
-            <label className="modal-radio">
-              <input
-                type="radio"
-                name="locationMode"
-                checked={locationMode === 'map'}
-                onChange={() => setLocationMode('map')}
-              />
-              Choose on map
-            </label>
+          <div className="form-group">
+            <label htmlFor="locationMode">How should we set your workplace?</label>
+            <select
+              id="locationMode"
+              className="modal-select"
+              value={locationMode}
+              onChange={(e) => setLocationMode(e.target.value)}
+              aria-label="Workplace input type"
+            >
+              <option value="search">Search by address</option>
+              <option value="map">Choose on map</option>
+            </select>
           </div>
 
           {locationMode === 'search' ? (
