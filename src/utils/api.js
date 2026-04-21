@@ -2,29 +2,100 @@ const ORS_KEY = import.meta.env.VITE_OPENROUTE_KEY
 const TT_APP_ID = import.meta.env.VITE_TRAVELTIME_APP_ID
 const TT_API_KEY = import.meta.env.VITE_TRAVELTIME_API_KEY
 
-export async function autocompleteAddress(text) {
-  const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${ORS_KEY}&text=${encodeURIComponent(text)}&boundary.country=US&boundary.rect.min_lon=-71.5&boundary.rect.min_lat=42.0&boundary.rect.max_lon=-70.8&boundary.rect.max_lat=42.7&size=5`
+/** Greater Boston-ish bounding box for Photon (minLon,minLat,maxLon,maxLat) */
+const PHOTON_BBOX = '-71.55,42.15,-70.85,42.55'
+
+function formatPhotonLabel(props) {
+  const streetLine = [props.housenumber, props.street].filter(Boolean).join(' ').trim()
+  const place = [props.city || props.town || props.district, props.state].filter(Boolean).join(', ')
+  if (streetLine && place) return `${streetLine}, ${place}`
+  if (props.name && place) return `${props.name}, ${place}`
+  if (props.name) return props.name
+  if (place) return place
+  return 'Selected location'
+}
+
+function photonFeaturesToSuggestions(features) {
+  return features.map((f) => {
+    const [lng, lat] = f.geometry.coordinates
+    return {
+      label: formatPhotonLabel(f.properties || {}),
+      lat,
+      lng,
+    }
+  })
+}
+
+/**
+ * Photon (OSM) — works from the browser without an API key. Used when OpenRoute is unavailable.
+ */
+async function photonAutocomplete(text) {
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(text)}&limit=8&bbox=${PHOTON_BBOX}`
   const res = await fetch(url)
+  if (!res.ok) return []
   const data = await res.json()
-  if (data.features) {
-    return data.features.map((f) => ({
-      label: f.properties.label,
-      lat: f.geometry.coordinates[1],
-      lng: f.geometry.coordinates[0],
-    }))
+  const features = data.features || []
+  return photonFeaturesToSuggestions(features)
+}
+
+async function photonGeocode(query) {
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1&bbox=${PHOTON_BBOX}`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Photon geocode failed')
+  const data = await res.json()
+  const f = data.features?.[0]
+  if (!f) throw new Error('Could not geocode address')
+  const [lng, lat] = f.geometry.coordinates
+  return { lat, lng }
+}
+
+export async function autocompleteAddress(text) {
+  const q = text.trim()
+  if (!q) return []
+
+  if (ORS_KEY) {
+    try {
+      const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${ORS_KEY}&text=${encodeURIComponent(q)}&boundary.country=US&boundary.rect.min_lon=-71.5&boundary.rect.min_lat=42.0&boundary.rect.max_lon=-70.8&boundary.rect.max_lat=42.7&size=8`
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.features?.length) {
+          return data.features.map((f) => ({
+            label: f.properties.label,
+            lat: f.geometry.coordinates[1],
+            lng: f.geometry.coordinates[0],
+          }))
+        }
+      }
+    } catch {
+      /* fall through to Photon */
+    }
   }
-  return []
+
+  return photonAutocomplete(q)
 }
 
 export async function geocodeAddress(address) {
-  const url = `https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(address)}&boundary.country=US&size=1`
-  const res = await fetch(url)
-  const data = await res.json()
-  if (data.features && data.features.length > 0) {
-    const [lng, lat] = data.features[0].geometry.coordinates
-    return { lat, lng }
+  const q = address.trim()
+  if (!q) throw new Error('Could not geocode address')
+
+  if (ORS_KEY) {
+    try {
+      const url = `https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(q)}&boundary.country=US&size=1`
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.features?.length) {
+          const [lng, lat] = data.features[0].geometry.coordinates
+          return { lat, lng }
+        }
+      }
+    } catch {
+      /* fall through */
+    }
   }
-  throw new Error('Could not geocode address')
+
+  return photonGeocode(q)
 }
 
 export async function fetchIsochrone(lat, lng, mode, intervals = [600, 1200, 1800]) {
