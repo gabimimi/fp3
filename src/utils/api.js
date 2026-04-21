@@ -1,6 +1,67 @@
+import * as turf from '@turf/turf'
+
 const ORS_KEY = import.meta.env.VITE_OPENROUTE_KEY
 const TT_APP_ID = import.meta.env.VITE_TRAVELTIME_APP_ID
 const TT_API_KEY = import.meta.env.VITE_TRAVELTIME_API_KEY
+
+/** Rough km/h for ring radii when OpenRoute / TravelTime are unavailable (not real network isochrones). */
+function speedKmhForApproxMode(mode) {
+  if (mode === 'driving-car') return 32
+  if (mode === 'public_transport') return 10
+  return 5
+}
+
+/**
+ * Circular stand-in for real isochrones so the map and charts work without API keys (e.g. GitHub Pages).
+ */
+function buildApproximateIsochrone(lat, lng, mode, intervals = [600, 1200, 1800]) {
+  const speedKmh = speedKmhForApproxMode(mode)
+  const center = turf.point([lng, lat])
+  const features = intervals.map((seconds) => {
+    const radiusKm = (seconds / 3600) * speedKmh
+    const circle = turf.circle(center, radiusKm, { steps: 64, units: 'kilometers' })
+    circle.properties = { value: seconds, center: [lng, lat] }
+    return circle
+  })
+  return {
+    type: 'FeatureCollection',
+    features: features.sort((a, b) => b.properties.value - a.properties.value),
+  }
+}
+
+async function fetchOpenRouteIsochrone(lat, lng, profile, intervals) {
+  const url = `https://api.openrouteservice.org/v2/isochrones/${profile}`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: ORS_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      locations: [[lng, lat]],
+      range: intervals,
+      range_type: 'time',
+    }),
+  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Isochrone API error: ${err}`)
+  }
+  return res.json()
+}
+
+async function fetchIsochroneDrivingOrWalking(lat, lng, mode, intervals) {
+  const profile = mode === 'foot-walking' ? 'foot-walking' : 'driving-car'
+  if (!ORS_KEY) {
+    return buildApproximateIsochrone(lat, lng, mode, intervals)
+  }
+  try {
+    return await fetchOpenRouteIsochrone(lat, lng, profile, intervals)
+  } catch (e) {
+    console.warn('OpenRoute isochrone failed, using approximate rings:', e)
+    return buildApproximateIsochrone(lat, lng, mode, intervals)
+  }
+}
 
 /** Greater Boston-ish bounding box for Photon (minLon,minLat,maxLon,maxLat) */
 const PHOTON_BBOX = '-71.55,42.15,-70.85,42.55'
@@ -102,25 +163,7 @@ export async function fetchIsochrone(lat, lng, mode, intervals = [600, 1200, 180
   if (mode === 'public_transport') {
     return fetchTransitIsochrone(lat, lng, intervals)
   }
-  const profile = mode === 'foot-walking' ? 'foot-walking' : 'driving-car'
-  const url = `https://api.openrouteservice.org/v2/isochrones/${profile}`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': ORS_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      locations: [[lng, lat]],
-      range: intervals,
-      range_type: 'time',
-    }),
-  })
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Isochrone API error: ${err}`)
-  }
-  return res.json()
+  return fetchIsochroneDrivingOrWalking(lat, lng, mode, intervals)
 }
 
 async function fetchTransitIsochrone(lat, lng, intervals) {
@@ -151,7 +194,7 @@ async function fetchTransitIsochrone(lat, lng, intervals) {
   if (!res.ok) {
     const err = await res.text()
     console.warn('TravelTime API error, falling back to walking isochrone:', err)
-    return fetchIsochrone(lat, lng, 'foot-walking', intervals)
+    return fetchIsochroneDrivingOrWalking(lat, lng, 'foot-walking', intervals)
   }
 
   const data = await res.json()
@@ -183,11 +226,68 @@ async function fetchTransitIsochrone(lat, lng, intervals) {
   }
 }
 
-export async function fetchDirections(fromLat, fromLng, toLat, toLng, profile = 'foot-walking') {
-  const url = `https://api.openrouteservice.org/v2/directions/${profile}?api_key=${ORS_KEY}&start=${fromLng},${fromLat}&end=${toLng},${toLat}`
+async function fetchDirectionsOsrm(fromLat, fromLng, toLat, toLng, profile) {
+  const osrmProfile = profile === 'driving-car' ? 'car' : 'foot'
+  const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`
   const res = await fetch(url)
-  if (!res.ok) throw new Error('Directions API error')
-  return res.json()
+  if (!res.ok) throw new Error('OSRM directions failed')
+  const data = await res.json()
+  const route = data.routes?.[0]
+  if (!route) throw new Error('No route')
+  return {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: {
+          summary: { duration: route.duration },
+        },
+        geometry: route.geometry,
+      },
+    ],
+  }
+}
+
+function fetchDirectionsStraightLine(fromLat, fromLng, toLat, toLng, profile) {
+  const from = turf.point([fromLng, fromLat])
+  const to = turf.point([toLng, toLat])
+  const km = turf.distance(from, to, { units: 'kilometers' })
+  const speedKmh = profile === 'driving-car' ? 35 : 5
+  const duration = (km / speedKmh) * 3600
+  return {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { summary: { duration } },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [fromLng, fromLat],
+            [toLng, toLat],
+          ],
+        },
+      },
+    ],
+  }
+}
+
+export async function fetchDirections(fromLat, fromLng, toLat, toLng, profile = 'foot-walking') {
+  if (ORS_KEY) {
+    try {
+      const url = `https://api.openrouteservice.org/v2/directions/${profile}?api_key=${ORS_KEY}&start=${fromLng},${fromLat}&end=${toLng},${toLat}`
+      const res = await fetch(url)
+      if (res.ok) return res.json()
+    } catch (e) {
+      console.warn('OpenRoute directions failed:', e)
+    }
+  }
+  try {
+    return await fetchDirectionsOsrm(fromLat, fromLng, toLat, toLng, profile)
+  } catch (e) {
+    console.warn('OSRM directions failed, using straight-line estimate:', e)
+    return fetchDirectionsStraightLine(fromLat, fromLng, toLat, toLng, profile)
+  }
 }
 
 export async function fetchCensusRentData() {

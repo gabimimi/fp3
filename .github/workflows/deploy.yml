@@ -1,3 +1,9 @@
+# Full map + transit isochrones need these repository secrets (Settings → Secrets and variables → Actions):
+#   OPENROUTE_KEY          — OpenRoute API key (or use VITE_OPENROUTE_KEY instead)
+#   TRAVELTIME_APP_ID      — TravelTime app id for public_transport isochrones (or VITE_TRAVELTIME_APP_ID)
+#   TRAVELTIME_API_KEY     — TravelTime API key (or VITE_TRAVELTIME_API_KEY)
+# GITHUB_REPOSITORY is set automatically so Vite can use the correct /repo/ base path.
+
 name: Deploy to GitHub Pages
 
 on:
@@ -33,9 +39,13 @@ jobs:
       - run: npm run build
         env:
           GITHUB_ACTIONS: true
+          GITHUB_REPOSITORY: ${{ github.repository }}
           OPENROUTE_KEY: ${{ secrets.OPENROUTE_KEY }}
+          VITE_OPENROUTE_KEY: ${{ secrets.VITE_OPENROUTE_KEY }}
           TRAVELTIME_APP_ID: ${{ secrets.TRAVELTIME_APP_ID }}
+          VITE_TRAVELTIME_APP_ID: ${{ secrets.VITE_TRAVELTIME_APP_ID }}
           TRAVELTIME_API_KEY: ${{ secrets.TRAVELTIME_API_KEY }}
+          VITE_TRAVELTIME_API_KEY: ${{ secrets.VITE_TRAVELTIME_API_KEY }}
 
       - uses: actions/configure-pages@v5
 
