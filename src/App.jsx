@@ -212,7 +212,6 @@ function App() {
         >
           <span>Income: ${monthlyIncome.toLocaleString()}/mo</span>
           <span>Work: {workAddress || 'Not set'}</span>
-          <span className="header-info-edit-hint">Click to edit</span>
         </button>
       </header>
       <div className="panels">

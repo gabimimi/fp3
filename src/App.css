@@ -82,8 +82,9 @@
 
 button.header-info {
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   max-width: min(520px, 48vw);
+  min-width: 0;
   text-align: left;
   cursor: pointer;
   border: 1px solid transparent;
@@ -96,6 +97,18 @@ button.header-info {
   color: inherit;
 }
 
+button.header-info span:first-child {
+  flex-shrink: 0;
+}
+
+button.header-info span:last-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 button.header-info:hover {
   background: rgba(26, 26, 26, 0.05);
   border-color: var(--paper-rule);
@@ -104,21 +117,6 @@ button.header-info:hover {
 button.header-info:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
-}
-
-.header-info-edit-hint {
-  flex: 0 0 100%;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-muted);
-  opacity: 0.85;
-}
-
-button.header-info:hover .header-info-edit-hint {
-  color: var(--ink);
-  opacity: 1;
 }
 
 .panels {
