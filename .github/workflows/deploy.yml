@@ -3,6 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,19 +23,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
+          cache: npm
 
-      - run: pnpm install
+      - run: npm ci
 
-      - run: pnpm build
+      - run: npm run build
         env:
+          GITHUB_ACTIONS: true
           OPENROUTE_KEY: ${{ secrets.OPENROUTE_KEY }}
           TRAVELTIME_APP_ID: ${{ secrets.TRAVELTIME_APP_ID }}
           TRAVELTIME_API_KEY: ${{ secrets.TRAVELTIME_API_KEY }}
