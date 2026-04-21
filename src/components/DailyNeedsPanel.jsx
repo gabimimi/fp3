@@ -26,9 +26,11 @@ export default function DailyNeedsPanel({ visible, onStopChange }) {
   const mapReady = useRef(false)
 
   useEffect(() => {
-    fetch('/data/osm_daily_needs.json')
+    const url = `${import.meta.env.BASE_URL}data/osm_daily_needs.json`
+    fetch(url)
       .then((r) => r.json())
       .then((d) => setAllStops(d.stops))
+      .catch(() => setAllStops(null))
   }, [])
 
   const renderStop = useCallback((stopData) => {

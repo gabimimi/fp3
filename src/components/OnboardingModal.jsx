@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { autocompleteAddress, geocodeAddress } from '../utils/api'
 
-export default function OnboardingModal({ onSubmit }) {
+export default function OnboardingModal({ onSubmit, onBackToStory }) {
   const [income, setIncome] = useState('')
   const [address, setAddress] = useState('')
   const [selectedLocation, setSelectedLocation] = useState(null)
@@ -130,6 +130,14 @@ export default function OnboardingModal({ onSubmit }) {
         <button type="submit" disabled={loading}>
           {loading ? 'Finding your workplace...' : 'Start Exploring'}
         </button>
+
+        {onBackToStory && (
+          <p className="modal-back-story">
+            <button type="button" className="modal-back-story-btn" onClick={onBackToStory}>
+              ← Back to story
+            </button>
+          </p>
+        )}
       </form>
     </div>
   )

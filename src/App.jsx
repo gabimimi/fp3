@@ -137,13 +137,27 @@ function App() {
   }
 
   if (!onboarded) {
-    return <OnboardingModal onSubmit={handleOnboard} />
+    return (
+      <OnboardingModal
+        onSubmit={handleOnboard}
+        onBackToStory={() => setStoryComplete(false)}
+      />
+    )
   }
 
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Boston Housing Affordability & Commute Explorer</h1>
+        <div className="app-header-title-row">
+          <h1>Boston Housing Affordability & Commute Explorer</h1>
+          <button
+            type="button"
+            className="app-header-back"
+            onClick={() => setStoryComplete(false)}
+          >
+            Back to story
+          </button>
+        </div>
         <div className="header-info">
           <span>Income: ${monthlyIncome.toLocaleString()}/mo</span>
           <span>Work: {workAddress}</span>
