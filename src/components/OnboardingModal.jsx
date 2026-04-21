@@ -1,10 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
-import { autocompleteAddress, geocodeAddress } from '../utils/api'
+import { autocompleteAddress, geocodeAddress, reverseGeocodeLabel } from '../utils/api'
+import WorkLocationMiniMap from './WorkLocationMiniMap'
+
+const RENT_TO_INCOME_RATIO = 0.3
 
 export default function OnboardingModal({ onSubmit, onBackToStory }) {
+  const [budgetMode, setBudgetMode] = useState('income')
   const [income, setIncome] = useState('')
+  const [rentBudget, setRentBudget] = useState('')
   const [address, setAddress] = useState('')
   const [selectedLocation, setSelectedLocation] = useState(null)
+  const [locationMode, setLocationMode] = useState('search')
+  const [mapLocation, setMapLocation] = useState(null)
+  const [mapLabel, setMapLabel] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -21,6 +29,20 @@ export default function OnboardingModal({ onSubmit, onBackToStory }) {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    if (!mapLocation) {
+      setMapLabel('')
+      return
+    }
+    let cancelled = false
+    reverseGeocodeLabel(mapLocation.lat, mapLocation.lng).then((label) => {
+      if (!cancelled && label) setMapLabel(label)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [mapLocation])
 
   const handleAddressChange = (e) => {
     const value = e.target.value
@@ -54,25 +76,55 @@ export default function OnboardingModal({ onSubmit, onBackToStory }) {
     setShowSuggestions(false)
   }
 
+  const handleMapPickChange = ({ lat, lng }) => {
+    setMapLocation({ lat, lng })
+    setSelectedLocation({ lat, lng })
+    setAddress('')
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const monthlyIncome = parseFloat(income)
-    if (!monthlyIncome || monthlyIncome <= 0) {
-      setError('Please enter a valid income')
+    setError('')
+
+    let monthlyIncome = 0
+    if (budgetMode === 'income') {
+      monthlyIncome = parseFloat(income)
+      if (!monthlyIncome || monthlyIncome <= 0) {
+        setError('Please enter a valid monthly gross income, or switch to rent budget.')
+        return
+      }
+    } else {
+      const rent = parseFloat(rentBudget)
+      if (!rent || rent <= 0) {
+        setError('Please enter a maximum monthly rent, or switch to income.')
+        return
+      }
+      monthlyIncome = rent / RENT_TO_INCOME_RATIO
+    }
+
+    if (locationMode === 'map') {
+      if (!mapLocation) {
+        setError('Click the map to set your workplace, or use address search instead.')
+        return
+      }
+      const label =
+        mapLabel ||
+        `Work (${mapLocation.lat.toFixed(4)}, ${mapLocation.lng.toFixed(4)})`
+      onSubmit(monthlyIncome, mapLocation, label)
       return
     }
-    if (!address.trim()) {
-      setError('Please enter a work address')
+
+    if (!address.trim() && !selectedLocation) {
+      setError('Enter a work address or switch to choosing a location on the map.')
       return
     }
 
     if (selectedLocation) {
-      onSubmit(monthlyIncome, selectedLocation, address)
+      onSubmit(monthlyIncome, selectedLocation, address || mapLabel)
       return
     }
 
     setLoading(true)
-    setError('')
     try {
       const location = await geocodeAddress(address + ', Boston, MA')
       onSubmit(monthlyIncome, location, address)
@@ -84,51 +136,130 @@ export default function OnboardingModal({ onSubmit, onBackToStory }) {
 
   return (
     <div className="modal-overlay">
-      <form className="modal" onSubmit={handleSubmit}>
+      <form className="modal modal-wide" onSubmit={handleSubmit}>
         <h2>Welcome</h2>
-        <p>Tell us about yourself to explore housing options in Greater Boston.</p>
+        <p className="modal-lead">
+          Set up a quick profile so we can color housing by affordability and estimate commute times.
+          All processing happens in your browser; use whichever options you are comfortable with.
+        </p>
 
-        <div className="form-group">
-          <label htmlFor="income">Monthly Gross Income ($)</label>
-          <input
-            id="income"
-            type="number"
-            placeholder="e.g. 5000"
-            value={income}
-            onChange={(e) => setIncome(e.target.value)}
-            min="0"
-            step="100"
-          />
-        </div>
-
-        <div className="form-group" ref={wrapperRef}>
-          <label htmlFor="address">Work Address</label>
-          <div className="autocomplete-wrapper">
-            <input
-              id="address"
-              type="text"
-              placeholder="e.g. 100 Cambridge St, Boston"
-              value={address}
-              onChange={handleAddressChange}
-              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-              autoComplete="off"
-            />
-            {showSuggestions && (
-              <ul className="autocomplete-list">
-                {suggestions.map((s, i) => (
-                  <li key={i} onMouseDown={() => handleSuggestionClick(s)}>
-                    {s.label}
-                  </li>
-                ))}
-              </ul>
-            )}
+        <fieldset className="modal-fieldset">
+          <legend className="modal-legend">Budget</legend>
+          <div className="modal-toggle-row">
+            <label className="modal-radio">
+              <input
+                type="radio"
+                name="budgetMode"
+                checked={budgetMode === 'income'}
+                onChange={() => setBudgetMode('income')}
+              />
+              Monthly gross income
+            </label>
+            <label className="modal-radio">
+              <input
+                type="radio"
+                name="budgetMode"
+                checked={budgetMode === 'rent'}
+                onChange={() => setBudgetMode('rent')}
+              />
+              Max monthly rent (housing budget)
+            </label>
           </div>
-        </div>
+          {budgetMode === 'income' ? (
+            <div className="form-group">
+              <label htmlFor="income">Monthly gross income ($)</label>
+              <input
+                id="income"
+                type="number"
+                placeholder="e.g. 5000"
+                value={income}
+                onChange={(e) => setIncome(e.target.value)}
+                min="0"
+                step="100"
+              />
+            </div>
+          ) : (
+            <div className="form-group">
+              <label htmlFor="rentBudget">Max monthly rent ($)</label>
+              <input
+                id="rentBudget"
+                type="number"
+                placeholder="e.g. 1800"
+                value={rentBudget}
+                onChange={(e) => setRentBudget(e.target.value)}
+                min="0"
+                step="50"
+              />
+              <p className="form-hint">
+                We translate this into an implied income using a standard 30% rent-to-income rule for
+                affordability tier colors (you can still adjust the rent slider in the explorer).
+              </p>
+            </div>
+          )}
+        </fieldset>
 
-        {error && <p style={{ color: '#e94560', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+        <fieldset className="modal-fieldset">
+          <legend className="modal-legend">Workplace</legend>
+          <div className="modal-toggle-row">
+            <label className="modal-radio">
+              <input
+                type="radio"
+                name="locationMode"
+                checked={locationMode === 'search'}
+                onChange={() => setLocationMode('search')}
+              />
+              Search address
+            </label>
+            <label className="modal-radio">
+              <input
+                type="radio"
+                name="locationMode"
+                checked={locationMode === 'map'}
+                onChange={() => setLocationMode('map')}
+              />
+              Choose on map
+            </label>
+          </div>
+
+          {locationMode === 'search' ? (
+            <div className="form-group" ref={wrapperRef}>
+              <label htmlFor="address">Work address</label>
+              <div className="autocomplete-wrapper">
+                <input
+                  id="address"
+                  type="text"
+                  placeholder="e.g. 100 Cambridge St, Boston"
+                  value={address}
+                  onChange={handleAddressChange}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                  autoComplete="off"
+                />
+                {showSuggestions && (
+                  <ul className="autocomplete-list">
+                    {suggestions.map((s, i) => (
+                      <li key={i} onMouseDown={() => handleSuggestionClick(s)}>
+                        {s.label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          ) : (
+            <WorkLocationMiniMap location={mapLocation} onLocationChange={handleMapPickChange} />
+          )}
+        </fieldset>
+
+        {locationMode === 'map' && mapLocation && mapLabel && (
+          <p className="map-address-preview">
+            <strong>Detected:</strong> {mapLabel}
+          </p>
+        )}
+
+        {error && <p className="modal-error">{error}</p>}
 
         <button type="submit" disabled={loading}>
-          {loading ? 'Finding your workplace...' : 'Start Exploring'}
+          {loading ? 'Finding your workplace...' : 'Start exploring'}
         </button>
 
         {onBackToStory && (

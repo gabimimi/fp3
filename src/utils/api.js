@@ -110,6 +110,21 @@ async function photonGeocode(query) {
   return { lat, lng }
 }
 
+/** Label for a lat/lng (workplace pin on map) — no API key required. */
+export async function reverseGeocodeLabel(lat, lng) {
+  try {
+    const url = `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=en`
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const data = await res.json()
+    const f = data.features?.[0]
+    if (!f) return null
+    return formatPhotonLabel(f.properties || {})
+  } catch {
+    return null
+  }
+}
+
 export async function autocompleteAddress(text) {
   const q = text.trim()
   if (!q) return []

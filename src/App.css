@@ -93,10 +93,35 @@
 
 .panel-right {
   width: 45%;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
   background: var(--paper-bg);
   border-left: 1px solid var(--paper-rule);
-  padding: 20px 22px;
+}
+
+.panel-right-toolbar-wrap {
+  flex-shrink: 0;
+  padding: 16px 22px 12px;
+  background: var(--paper-bg);
+  border-bottom: 1px solid var(--paper-rule);
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  box-shadow: 0 6px 14px rgba(26, 26, 26, 0.06);
+}
+
+.panel-right-toolbar-wrap .toolbar {
+  margin-bottom: 0;
+}
+
+.charts-panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 22px 28px;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Toolbar: neutral chrome */
@@ -166,6 +191,75 @@
   font-family: var(--font-label);
   font-weight: 600;
   animation: pulse 1s infinite;
+}
+
+.toolbar-row-controls {
+  justify-content: flex-start;
+}
+
+.toolbar-row-status {
+  min-height: 28px;
+  align-items: center;
+}
+
+.toolbar-row-actions {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.loading-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-family: var(--font-label);
+  font-weight: 600;
+}
+
+.loading-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  animation: pulse 0.9s ease-in-out infinite;
+}
+
+.toolbar-text-btn {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: var(--font-label);
+  font-weight: 700;
+  background: var(--paper-bg);
+  color: var(--ink);
+  border: 1px solid var(--paper-rule-strong);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.toolbar-text-btn:hover {
+  background: var(--paper-card);
+}
+
+.toolbar-selected-housing {
+  padding: 10px 12px;
+  background: var(--paper-bg);
+  border: 1px solid var(--paper-rule);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toolbar-selected-housing strong {
+  display: block;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.toolbar-selected-meta {
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-family: var(--font-label);
+  font-weight: 600;
 }
 
 .layer-toggle {
@@ -380,10 +474,130 @@
   color: var(--ink);
 }
 
+.modal-wide {
+  max-width: 520px;
+}
+
+.modal-lead {
+  margin: 0 0 20px;
+  color: var(--ink-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.modal-fieldset {
+  border: 1px solid var(--paper-rule);
+  padding: 16px 18px 18px;
+  margin: 0 0 18px;
+  background: var(--paper-bg);
+}
+
+.modal-legend {
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: var(--font-label);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+.modal-toggle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  margin-bottom: 14px;
+}
+
+.modal-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.modal-radio input {
+  accent-color: var(--ink);
+}
+
+.form-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+  line-height: 1.45;
+}
+
+.map-address-preview {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin: 0 0 16px;
+  line-height: 1.45;
+}
+
+.modal-error {
+  color: #e94560;
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+.work-map-wrap {
+  margin-top: 4px;
+}
+
+.work-map-hint {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin: 0 0 10px;
+  line-height: 1.45;
+}
+
+.work-map-el {
+  height: 220px;
+  width: 100%;
+  border: 1px solid var(--paper-rule-strong);
+  border-radius: 0;
+}
+
 /* Map */
 .map-container {
+  position: relative;
   height: 100%;
   width: 100%;
+}
+
+.map-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(250, 248, 242, 0.72);
+  font-size: 13px;
+  font-family: var(--font-label);
+  font-weight: 700;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.map-loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--paper-rule);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: map-spin 0.75s linear infinite;
+}
+
+@keyframes map-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .map-container .leaflet-container {
@@ -417,6 +631,33 @@
   margin-bottom: 20px;
   border: var(--ui-card-border);
   box-shadow: var(--ui-card-shadow);
+}
+
+.explorer-intro p {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+
+.explorer-intro p:last-of-type {
+  margin-bottom: 0;
+}
+
+.explorer-takeaways {
+  margin: 12px 0 0;
+  padding-left: 1.15rem;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+
+.explorer-takeaways li {
+  margin-bottom: 8px;
+}
+
+.explorer-takeaways li:last-child {
+  margin-bottom: 0;
 }
 
 .chart-card h3 {
@@ -603,27 +844,27 @@
 }
 
 /* Budget comparison: rent = same blue; other segments neutral (no rainbow) */
-.charts-panel > .chart-card:nth-child(2) svg.chart-svg rect[fill='#5A8A8A' i] {
+.charts-panel .chart-card-budget svg.chart-svg rect[fill='#5A8A8A' i] {
   fill: #7a8490 !important;
 }
 
-.charts-panel > .chart-card:nth-child(2) svg.chart-svg rect[fill='#C4B078' i] {
+.charts-panel .chart-card-budget svg.chart-svg rect[fill='#C4B078' i] {
   fill: #b0a69a !important;
 }
 
-.charts-panel > .chart-card:nth-child(2) svg.chart-svg defs pattern#stripe-pattern rect {
+.charts-panel .chart-card-budget svg.chart-svg defs pattern#stripe-pattern rect {
   fill: #5c636b !important;
   opacity: 0.35 !important;
 }
 
-.charts-panel > .chart-card:nth-child(2) svg.chart-svg rect[stroke='#5A8A8A' i] {
+.charts-panel .chart-card-budget svg.chart-svg rect[stroke='#5A8A8A' i] {
   stroke: #5c636b !important;
 }
 
-.charts-panel > .chart-card:nth-child(2) svg.chart-svg line[stroke='#1a1a2e' i] {
+.charts-panel .chart-card-budget svg.chart-svg line[stroke='#1a1a2e' i] {
   stroke: var(--ink) !important;
 }
 
-.charts-panel > .chart-card:nth-child(2) svg.chart-svg rect[fill='url(#stripe-pattern)' i] {
+.charts-panel .chart-card-budget svg.chart-svg rect[fill='url(#stripe-pattern)' i] {
   stroke: #5c636b !important;
 }

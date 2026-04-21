@@ -32,6 +32,9 @@ export default function MapPanel({
   monthlyIncome,
   affordabilityPct,
   onMapClick,
+  onHousingClick,
+  selectedHousingId,
+  mapBusy,
   mapLayer,
 }) {
   const mapRef = useRef(null)
@@ -44,6 +47,8 @@ export default function MapPanel({
   const workMarkerRef = useRef(null)
   const onMapClickRef = useRef(onMapClick)
   onMapClickRef.current = onMapClick
+  const onHousingClickRef = useRef(onHousingClick)
+  onHousingClickRef.current = onHousingClick
 
   // Initialize map
   useEffect(() => {
@@ -199,11 +204,12 @@ export default function MapPanel({
     filteredHousing.forEach((h) => {
       const color = getAffordabilityColor(h, annualIncome)
       const radius = 2 + Math.sqrt(h.hu / maxUnits) * 6
-      L.circleMarker([h.lat, h.lng], {
-        radius,
+      const isSel = selectedHousingId != null && String(h.id) === String(selectedHousingId)
+      const m = L.circleMarker([h.lat, h.lng], {
+        radius: isSel ? radius + 2 : radius,
         fillColor: color,
-        color: '#fff',
-        weight: 0.5,
+        color: isSel ? '#1a1a2e' : '#fff',
+        weight: isSel ? 2.5 : 0.5,
         fillOpacity: 0.85,
       })
         .bindTooltip(
@@ -215,12 +221,16 @@ export default function MapPanel({
           </div>`,
           { direction: 'top', offset: [0, -8] }
         )
-        .addTo(layer)
+        .on('click', (e) => {
+          L.DomEvent.stopPropagation(e)
+          onHousingClickRef.current?.(h)
+        })
+      m.addTo(layer)
     })
 
     layer.addTo(map)
     housingLayerRef.current = layer
-  }, [filteredHousing, monthlyIncome])
+  }, [filteredHousing, monthlyIncome, selectedHousingId])
 
   // Route polyline
   useEffect(() => {
@@ -249,6 +259,12 @@ export default function MapPanel({
   return (
     <div className="map-container">
       <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
+      {mapBusy && (
+        <div className="map-loading-overlay" role="status" aria-live="polite">
+          <div className="map-loading-spinner" />
+          <span>Updating routes and reach area…</span>
+        </div>
+      )}
       {!clickedPoint && (
         <div className="map-instruction">Click anywhere on the map to explore commute times</div>
       )}

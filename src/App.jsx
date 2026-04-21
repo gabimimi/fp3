@@ -29,7 +29,9 @@ function App() {
   const [routeData, setRouteData] = useState(null)
   const [affordabilityPct, setAffordabilityPct] = useState(30)
   const [isLoading, setIsLoading] = useState(false)
+  const [routeLoading, setRouteLoading] = useState(false)
   const [commuteTime, setCommuteTime] = useState(null)
+  const [selectedHousing, setSelectedHousing] = useState(null)
 
   const [filteredTracts, setFilteredTracts] = useState([])
   const [filteredHousing, setFilteredHousing] = useState([])
@@ -66,6 +68,9 @@ function App() {
 
   useEffect(() => {
     if (!clickedPoint || !workLocation) return
+    setRouteLoading(true)
+    setRouteData(null)
+    setCommuteTime(null)
     const profile = travelMode === 'driving-car' ? 'driving-car' : 'foot-walking'
     fetchDirections(clickedPoint.lat, clickedPoint.lng, workLocation.lat, workLocation.lng, profile)
       .then((data) => {
@@ -76,6 +81,7 @@ function App() {
         }
       })
       .catch((err) => console.error('Route error:', err))
+      .finally(() => setRouteLoading(false))
   }, [clickedPoint, workLocation, travelMode])
 
   useEffect(() => {
@@ -116,6 +122,26 @@ function App() {
     setWorkLocation(location)
     setWorkAddress(address)
     setOnboarded(true)
+  }, [])
+
+  const handleMapClick = useCallback((pt) => {
+    setSelectedHousing(null)
+    setClickedPoint(pt)
+  }, [])
+
+  const handleHousingClick = useCallback((h) => {
+    setSelectedHousing((prev) => (prev?.id === h.id ? null : h))
+  }, [])
+
+  const handleClearExploration = useCallback(() => {
+    setClickedPoint(null)
+    setIsochroneData(null)
+    setRouteData(null)
+    setCommuteTime(null)
+  }, [])
+
+  const handleClearHousingSelection = useCallback(() => {
+    setSelectedHousing(null)
   }, [])
 
   useEffect(() => {
@@ -174,30 +200,42 @@ function App() {
             workLocation={workLocation}
             monthlyIncome={monthlyIncome}
             affordabilityPct={affordabilityPct}
-            onMapClick={setClickedPoint}
+            onMapClick={handleMapClick}
+            onHousingClick={handleHousingClick}
+            selectedHousingId={selectedHousing?.id ?? null}
+            mapBusy={isLoading || routeLoading}
             mapLayer={mapLayer}
           />
         </div>
         <div className="panel-right">
-          <Toolbar
-            travelMode={travelMode}
-            onTravelModeChange={setTravelMode}
-            affordabilityPct={affordabilityPct}
-            onAffordabilityChange={setAffordabilityPct}
-            isLoading={isLoading}
-            commuteTime={commuteTime}
-            mapLayer={mapLayer}
-            onMapLayerChange={setMapLayer}
-          />
-          <ChartsPanel
-            filteredTracts={filteredTracts}
-            rentData={rentData}
-            isochroneData={isochroneData}
-            tractBoundaries={tractBoundaries}
-            monthlyIncome={monthlyIncome}
-            affordabilityPct={affordabilityPct}
-            avgRent={avgRent}
-          />
+          <div className="panel-right-toolbar-wrap">
+            <Toolbar
+              travelMode={travelMode}
+              onTravelModeChange={setTravelMode}
+              affordabilityPct={affordabilityPct}
+              onAffordabilityChange={setAffordabilityPct}
+              isLoading={isLoading}
+              routeLoading={routeLoading}
+              commuteTime={commuteTime}
+              mapLayer={mapLayer}
+              onMapLayerChange={setMapLayer}
+              clickedPoint={clickedPoint}
+              onClearExploration={handleClearExploration}
+              selectedHousing={selectedHousing}
+              onClearHousingSelection={handleClearHousingSelection}
+            />
+          </div>
+          <div className="charts-panel-scroll">
+            <ChartsPanel
+              filteredTracts={filteredTracts}
+              rentData={rentData}
+              isochroneData={isochroneData}
+              tractBoundaries={tractBoundaries}
+              monthlyIncome={monthlyIncome}
+              affordabilityPct={affordabilityPct}
+              avgRent={avgRent}
+            />
+          </div>
         </div>
       </div>
     </div>
