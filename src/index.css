@@ -1,0 +1,47 @@
+/* Editorial base + one data blue family (plots only) */
+:root {
+  --paper-bg: #f5f0e0;
+  --paper-card: #ffffff;
+  --paper-rule: #d4d0c4;
+  --paper-rule-strong: #1a1a1a;
+  --ink: #1a1a1a;
+  --ink-muted: #595959;
+  --ink-faint: #6e6e6e;
+  /* Single hue for “you” / budget / rent / darker bars — not UI chrome */
+  --chart-blue: #4a6282;
+  --chart-blue-soft: color-mix(in srgb, var(--chart-blue) 34%, #ffffff);
+  --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-label: 'DM Sans', var(--font-sans);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background: var(--paper-bg);
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+}
+
+.app-header,
+.toolbar,
+.chart-card,
+.modal,
+.stat-value,
+.commute-time {
+  font-variant-numeric: tabular-nums;
+}
