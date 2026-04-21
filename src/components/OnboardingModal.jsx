@@ -4,14 +4,30 @@ import WorkLocationMiniMap from './WorkLocationMiniMap'
 
 const RENT_TO_INCOME_RATIO = 0.3
 
-export default function OnboardingModal({ onSubmit, onBackToStory }) {
+export default function OnboardingModal({
+  onSubmit,
+  onBackToStory,
+  variant = 'welcome',
+  initialProfile,
+  onCancel,
+}) {
+  const isEdit = variant === 'edit'
+
   const [budgetMode, setBudgetMode] = useState('income')
-  const [income, setIncome] = useState('')
+  const [income, setIncome] = useState(() =>
+    isEdit && initialProfile ? String(Math.round(initialProfile.monthlyIncome)) : ''
+  )
   const [rentBudget, setRentBudget] = useState('')
-  const [address, setAddress] = useState('')
-  const [selectedLocation, setSelectedLocation] = useState(null)
+  const [address, setAddress] = useState(() =>
+    isEdit && initialProfile ? initialProfile.workAddress || '' : ''
+  )
+  const [selectedLocation, setSelectedLocation] = useState(() =>
+    isEdit && initialProfile ? initialProfile.workLocation : null
+  )
   const [locationMode, setLocationMode] = useState('search')
-  const [mapLocation, setMapLocation] = useState(null)
+  const [mapLocation, setMapLocation] = useState(() =>
+    isEdit && initialProfile ? initialProfile.workLocation : null
+  )
   const [mapLabel, setMapLabel] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -134,13 +150,17 @@ export default function OnboardingModal({ onSubmit, onBackToStory }) {
     }
   }
 
+  const submitLabel = isEdit ? 'Save' : 'Start exploring'
+  const loadingSubmitLabel = isEdit ? 'Saving…' : 'Finding your workplace…'
+
   return (
     <div className="modal-overlay">
       <form className="modal modal-wide" onSubmit={handleSubmit}>
-        <h2>Welcome</h2>
+        <h2>{isEdit ? 'Update income & workplace' : 'Welcome'}</h2>
         <p className="modal-lead">
-          Set up a quick profile so we can color housing by affordability and estimate commute times.
-          All processing happens in your browser; use whichever options you are comfortable with.
+          {isEdit
+            ? 'Change your budget or workplace. Commute times and affordability colors update after you save.'
+            : 'Set up a quick profile so we can color housing by affordability and estimate commute times. All processing happens in your browser; use whichever options you are comfortable with.'}
         </p>
 
         <fieldset className="modal-fieldset">
@@ -244,11 +264,18 @@ export default function OnboardingModal({ onSubmit, onBackToStory }) {
 
         {error && <p className="modal-error">{error}</p>}
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Finding your workplace...' : 'Start exploring'}
-        </button>
+        <div className="modal-actions">
+          {isEdit && onCancel && (
+            <button type="button" className="modal-btn-secondary" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
+          <button type="submit" className="modal-btn-primary" disabled={loading}>
+            {loading ? loadingSubmitLabel : submitLabel}
+          </button>
+        </div>
 
-        {onBackToStory && (
+        {!isEdit && onBackToStory && (
           <p className="modal-back-story">
             <button type="button" className="modal-back-story-btn" onClick={onBackToStory}>
               ← Back to story

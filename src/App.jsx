@@ -36,6 +36,7 @@ function App() {
   const [filteredTracts, setFilteredTracts] = useState([])
   const [filteredHousing, setFilteredHousing] = useState([])
   const [avgRent, setAvgRent] = useState(0)
+  const [editProfileOpen, setEditProfileOpen] = useState(false)
 
   useEffect(() => {
     if (!onboarded) return
@@ -124,6 +125,13 @@ function App() {
     setOnboarded(true)
   }, [])
 
+  const handleProfileSave = useCallback((income, location, address) => {
+    setMonthlyIncome(income)
+    setWorkLocation(location)
+    setWorkAddress(address)
+    setEditProfileOpen(false)
+  }, [])
+
   const handleMapClick = useCallback((pt) => {
     setSelectedHousing(null)
     setClickedPoint(pt)
@@ -173,6 +181,18 @@ function App() {
 
   return (
     <div className="app">
+      {editProfileOpen && workLocation && (
+        <OnboardingModal
+          variant="edit"
+          initialProfile={{
+            monthlyIncome,
+            workAddress,
+            workLocation,
+          }}
+          onSubmit={handleProfileSave}
+          onCancel={() => setEditProfileOpen(false)}
+        />
+      )}
       <header className="app-header">
         <div className="app-header-title-row">
           <h1>Boston Housing Affordability & Commute Explorer</h1>
@@ -184,10 +204,16 @@ function App() {
             Back to story
           </button>
         </div>
-        <div className="header-info">
+        <button
+          type="button"
+          className="header-info"
+          onClick={() => setEditProfileOpen(true)}
+          aria-label="Edit income and workplace"
+        >
           <span>Income: ${monthlyIncome.toLocaleString()}/mo</span>
-          <span>Work: {workAddress}</span>
-        </div>
+          <span>Work: {workAddress || 'Not set'}</span>
+          <span className="header-info-edit-hint">Click to edit</span>
+        </button>
       </header>
       <div className="panels">
         <div className="panel-left">
