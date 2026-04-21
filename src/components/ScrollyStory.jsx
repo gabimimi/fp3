@@ -276,7 +276,6 @@ export default function ScrollyStory({ onComplete }) {
       {/* Hero */}
       <div className="scrolly-hero">
         <div className="scrolly-hero-content">
-          <p className="scrolly-hero-eyebrow">Greater Boston</p>
           <h1 className="scrolly-hero-title">
             <span className="scrolly-hero-title-line">Housing Near</span>
             <span className="scrolly-hero-title-accent">Transit</span>
